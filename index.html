@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synonym Mind Map Generator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .input-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        input {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            width: 300px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .mind-map {
+            display: none;
+            position: relative;
+            height: 500px;
+            margin-top: 40px;
+        }
+        
+        .central-word {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        
+        .synonym {
+            position: absolute;
+            background-color: #ecf0f1;
+            padding: 12px 20px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            width: 150px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+        
+        .synonym:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .definition {
+            display: none;
+            position: absolute;
+            background-color: white;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: 250px;
+            z-index: 100;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .definition.show {
+            display: block;
+        }
+        
+        .loading {
+            text-align: center;
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Synonym Mind Map Generator</h1>
+    
+    <div class="input-container">
+        <input type="text" id="wordInput" placeholder="Enter a word (e.g., gloomy)">
+        <button id="generateBtn">Generate</button>
+    </div>
+    
+    <div class="loading">
+        <div class="spinner"></div>
+        <p>Generating your mind map...</p>
+    </div>
+    
+    <div class="error">
+        <p>An error occurred. Please try again with a different word.</p>
+    </div>
+    
+    <div class="mind-map" id="mindMap">
+        <!-- Mind map will be generated here -->
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const wordInput = document.getElementById('wordInput');
+            const generateBtn = document.getElementById('generateBtn');
+            const loading = document.querySelector('.loading');
+            const error = document.querySelector('.error');
+            const mindMap = document.getElementById('mindMap');
+            
+            generateBtn.addEventListener('click', generateMindMap);
+            wordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    generateMindMap();
+                }
+            });
+            
+            async function generateMindMap() {
+                const word = wordInput.value.trim();
+                if (!word) return;
+                
+                // Show loading, hide others
+                loading.style.display = 'block';
+                error.style.display = 'none';
+                mindMap.style.display = 'none';
+                mindMap.innerHTML = '';
+                
+                try {
+                    // In a real implementation, you would call an API here
+                    // For this demo, we'll use mock data
+                    const synonyms = await fetchSynonyms(word);
+                    
+                    // If no synonyms found, show error
+                    if (synonyms.length === 0) {
+                        throw new Error('No synonyms found');
+                    }
+                    
+                    // Generate the mind map
+                    displayMindMap(word, synonyms);
+                    
+                    // Hide loading, show mind map
+                    loading.style.display = 'none';
+                    mindMap.style.display = 'block';
+                } catch (err) {
+                    console.error(err);
+                    loading.style.display = 'none';
+                    error.style.display = 'block';
+                }
+            }
+            
+            // Mock API call - in a real app, you'd call an actual API
+            async function fetchSynonyms(word) {
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Return mock data based on the word
+                const wordLower = word.toLowerCase();
+                
+                if (wordLower === 'gloomy') {
+                    return [
+                        { word: 'sorrowful', definition: 'Feeling or showing deep distress or sadness, often with a sense of loss or regret.' },
+                        { word: 'pitiful', definition: 'Deserving or arousing pity, often with a connotation of being inadequate or inferior.' },
+                        { word: 'deplorable', definition: 'Deserving strong condemnation; shockingly bad or unsatisfactory.' },
+                        { word: 'wretched', definition: 'In a very unhappy or unfortunate state, often with physical discomfort.' },
+                        { word: 'doleful', definition: 'Expressing sorrow; mournful, often with a sense of melancholy.' },
+                        { word: 'melancholic', definition: 'Characterized by or causing a deep, pensive sadness, often with no obvious cause.' },
+                        { word: 'pensive', definition: 'Engaged in deep or serious thought, often with a tinge of sadness.' },
+                        { word: 'yearning', definition: 'Having a strong feeling of longing, typically with sadness or tenderness.' },
+                        { word: 'lamentable', definition: 'Full of or expressing sorrow or grief, often about something regrettable.' },
+                        { word: 'wistful', definition: 'Having or showing a feeling of vague or regretful longing.' }
+                    ];
+                } else if (wordLower === 'happy') {
+                    return [
+                        { word: 'joyful', definition: 'Feeling or expressing great pleasure and happiness.' },
+                        { word: 'cheerful', definition: 'Noticeably happy and optimistic in disposition.' },
+                        { word: 'content', definition: 'In a state of peaceful happiness and satisfaction.' },
+                        { word: 'elated', definition: 'Ecstatically happy, often as a result of a success or triumph.' },
+                        { word: 'jubilant', definition: 'Feeling or expressing great happiness and triumph.' },
+                        { word: 'merry', definition: 'Cheerful and lively, especially when celebrating.' },
+                        { word: 'upbeat', definition: 'Cheerful; optimistic, especially in difficult circumstances.' },
+                        { word: 'gleeful', definition: 'Exuberantly or triumphantly joyful.' },
+                        { word: 'blissful', definition: 'Extremely happy; full of joy.' },
+                        { word: 'radiant', definition: 'Sending out light; shining or glowing brightly with happiness.' }
+                    ];
+                } else {
+                    // For other words, generate some generic synonyms
+                    const genericSynonyms = [
+                        'similar', 'alike', 'comparable', 'equivalent', 'parallel',
+                        'related', 'resembling', 'akin', 'analogous', 'homologous'
+                    ];
+                    
+                    return genericSynonyms.map(syn => ({
+                        word: syn,
+                        definition: `A word that has a similar meaning to ${word}. This is a placeholder definition that would be replaced with AI-generated content in a real implementation.`
+                    }));
+                }
+            }
+            
+            function displayMindMap(centralWord, synonyms) {
+                // Create central word
+                const centralElement = document.createElement('div');
+                centralElement.className = 'central-word';
+                centralElement.textContent = centralWord;
+                mindMap.appendChild(centralElement);
+                
+                // Position synonyms in a circle around the central word
+                const centerX = mindMap.offsetWidth / 2;
+                const centerY = mindMap.offsetHeight / 2;
+                const radius = Math.min(centerX, centerY) * 0.7;
+                const angleStep = (2 * Math.PI) / synonyms.length;
+                
+                synonyms.forEach((synonym, index) => {
+                    const angle = index * angleStep;
+                    const x = centerX + radius * Math.cos(angle) - 75;
+                    const y = centerY + radius * Math.sin(angle) - 25;
+                    
+                    const synonymElement = document.createElement('div');
+                    synonymElement.className = 'synonym';
+                    synonymElement.textContent = synonym.word;
+                    synonymElement.style.left = `${x}px`;
+                    synonymElement.style.top = `${y}px`;
+                    
+                    // Create definition element
+                    const definitionElement = document.createElement('div');
+                    definitionElement.className = 'definition';
+                    definitionElement.innerHTML = `<strong>${synonym.word}</strong><br><br>${synonym.definition}`;
+                    
+                    // Position definition near the synonym
+                    const defX = x + (Math.cos(angle) * 30);
+                    const defY = y + (Math.sin(angle) * 30);
+                    definitionElement.style.left = `${defX}px`;
+                    definitionElement.style.top = `${defY}px`;
+                    
+                    // Show/hide definition on click
+                    synonymElement.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        document.querySelectorAll('.definition').forEach(def => {
+                            def.classList.remove('show');
+                        });
+                        definitionElement.classList.add('show');
+                    });
+                    
+                    mindMap.appendChild(synonymElement);
+                    mindMap.appendChild(definitionElement);
+                });
+                
+                // Hide definition when clicking anywhere else
+                document.addEventListener('click', function() {
+                    document.querySelectorAll('.definition').forEach(def => {
+                        def.classList.remove('show');
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
